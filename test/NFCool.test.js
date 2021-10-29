@@ -7,7 +7,7 @@ contract("NFCool", (accounts) => {
     let contract;
 
     beforeEach(async () => {
-        contract = await NFCool.new({from: owner});
+        contract = await NFCool.new('Samuel Vuitton', {from: owner});
     });
     context("mint tokens", async () => {
        let ownerMints = [];

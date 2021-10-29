@@ -19,6 +19,8 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
         string status;
     }
 
+    string brandName;
+
     uint8 tokensCount;
     mapping (uint256 => uint256) private _tokenUnitsCount;
 
@@ -26,7 +28,8 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
 
     mapping(uint256 => mapping(uint256 => TokenUnitData)) private _tokenUnitData;
 
-    constructor() ERC1155PresetMinterPauser("") {
+    constructor(string memory _brandName) ERC1155PresetMinterPauser("") {
+        brandName = _brandName;
     }
 
     function tokenData(uint256 tokenId) public view virtual returns (TokenData memory) {
