@@ -2,8 +2,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/presets/ERC1155PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 
-contract NFcool is ERC1155PresetMinterPauser {
+
+contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
     using Strings for uint256;
 
     struct TokenData {
@@ -24,11 +26,15 @@ contract NFcool is ERC1155PresetMinterPauser {
 
     mapping(uint256 => mapping(uint256 => TokenUnitData)) private _tokenUnitData;
 
-    constructor() ERC1155PresetMinterPauser("https://game.example/api/item/{id}.json") {
+    constructor() ERC1155PresetMinterPauser("") {
     }
 
     function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
         return _tokenData[tokenId].uri;
+    }
+
+    function tokenData(uint256 tokenId) public view virtual returns (TokenData memory) {
+        return _tokenData[tokenId];
     }
 
     function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
@@ -39,7 +45,7 @@ contract NFcool is ERC1155PresetMinterPauser {
         return keccak256(bytes(_tokenData[tokenId].name)) != keccak256(bytes(""));
     }
 
-    function mint(string calldata tokenUri, string calldata tokenName, bytes memory data) external returns (uint256) {
+    function mintToken(string calldata tokenUri, string calldata tokenName, bytes memory data) external returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
 
         _mint(address(this), tokensCount, 0, data);
@@ -49,7 +55,7 @@ contract NFcool is ERC1155PresetMinterPauser {
         return tokensCount;
     }
 
-    function mintUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256) {
+    function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
 
         _mint(address(this), _tokenUnitsCount[tokenId], 1, data);
@@ -57,5 +63,9 @@ contract NFcool is ERC1155PresetMinterPauser {
 
         _tokenUnitsCount[tokenId]++;
         return _tokenUnitsCount[tokenId];
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155PresetMinterPauser, ERC1155Receiver) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
