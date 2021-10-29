@@ -29,12 +29,12 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
     constructor() ERC1155PresetMinterPauser("") {
     }
 
-    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
-        return _tokenData[tokenId].uri;
-    }
-
     function tokenData(uint256 tokenId) public view virtual returns (TokenData memory) {
         return _tokenData[tokenId];
+    }
+
+    function tokenUnitData(uint256 tokenId, uint256 tokenUnitId) public view virtual returns (TokenUnitData memory) {
+        return _tokenUnitData[tokenId][tokenUnitId];
     }
 
     function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
