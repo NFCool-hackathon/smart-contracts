@@ -32,6 +32,16 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
         brandName = _brandName;
     }
 
+    function getAllTokens() public view virtual returns (TokenData[] memory) {
+        TokenData[] memory tokens = new TokenData[](tokensCount);
+
+        for (uint256 i = 0 ; i < tokensCount ; i++) {
+            tokens[i] = _tokenData[i];
+        }
+
+        return tokens;
+    }
+
     function tokenData(uint256 tokenId) public view virtual returns (TokenData memory) {
         return _tokenData[tokenId];
     }
