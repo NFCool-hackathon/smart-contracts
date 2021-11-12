@@ -55,7 +55,7 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
     }
 
     function _exists(uint256 tokenId) private view returns (bool) {
-        return keccak256(bytes(_tokenData[tokenId].name)) != keccak256(bytes(""));
+        return tokenId < tokensCount;
     }
 
     function mintToken(string calldata tokenUri, string calldata tokenName, bytes memory data) external returns (uint256) {
@@ -70,6 +70,7 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(_exists(tokenId), "The token do not exists");
 
         _mint(address(this), _tokenUnitsCount[tokenId], 1, data);
         _tokenUnitData[tokenId][_tokenUnitsCount[tokenId]] = TokenUnitData(address(this), nfcId, "minted");
