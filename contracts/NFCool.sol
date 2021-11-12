@@ -3,10 +3,17 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/presets/ERC1155PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 
-contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
+contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder, ChainlinkClient {
     using Strings for uint256;
+    using Chainlink for Chainlink.Request;
+
+    // Chainlink variables
+    address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
 
     struct TokenData {
         string uri;
@@ -30,7 +37,34 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder {
 
     constructor(string memory _brandName) ERC1155PresetMinterPauser("") {
         brandName = _brandName;
+        setPublicChainlinkToken();
+        oracle = 0xACADFbd7e4Ec5B29D18bcBc70cdA57Ef271cE931;
+        jobId = "7b75d14b3c714fd19cbb199a36aaa9c9";
+        fee = 0.1 * 10 ** 18; // (Varies by network and job)
     }
+
+    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) public returns (bytes32 requestId)
+    {
+        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
+
+        request.add("tokenId", _tokenId);
+        request.add("unitId", _unitId);
+        request.add("to", _to);
+
+        // Multiply the result by 1000000000000000000 to remove decimals
+        int timesAmount = 10**18;
+        request.addInt("times", timesAmount);
+
+        // Sends the request
+        return sendChainlinkRequestTo(oracle, request, fee);
+    }
+    function fulfill(bytes32 _requestId, bool _valid, address _to, uint256 _tokenId, uint256 _unitId) public recordChainlinkFulfillment(_requestId)
+    {
+        if (_valid) {
+            _tokenUnitData[_tokenId][_unitId].owner = _to;
+        }
+    }
+
 
     function getAllTokens() public view virtual returns (TokenData[] memory) {
         TokenData[] memory tokens = new TokenData[](tokensCount);
