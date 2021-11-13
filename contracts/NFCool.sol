@@ -1,87 +1,22 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC1155/presets/ERC1155PresetMinterPauser.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
+import "./interfaces/INFCool.sol";
+import "./interfaces/IPhoneVerification.sol";
+import "./ERC1155Access.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-
-contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder, ChainlinkClient {
-    using Strings for uint256;
-    using Chainlink for Chainlink.Request;
-
-    // Chainlink variables
-    address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
-
-    struct TokenData {
-        string uri;
-        string name;
-    }
-
-    struct TokenUnitData {
-        address owner;
-        string nfcId;
-        string status;
-    }
-
+contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     string brandName;
-
     uint8 tokensCount;
+
+    address private _verificationContract;
+
     mapping (uint256 => uint256) private _tokenUnitsCount;
-
     mapping(uint256 => TokenData) private _tokenData;
-
     mapping(uint256 => mapping(uint256 => TokenUnitData)) private _tokenUnitData;
 
-    constructor(string memory _brandName) ERC1155PresetMinterPauser("") {
+    constructor(string memory _brandName) ERC1155Access("") {
         brandName = _brandName;
-        setPublicChainlinkToken();
-        oracle = 0xACADFbd7e4Ec5B29D18bcBc70cdA57Ef271cE931;
-        jobId = "7b75d14b3c714fd19cbb199a36aaa9c9";
-        fee = 0.1 * 10 ** 18; // (Varies by network and job)
-    }
-
-    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) public returns (bytes32 requestId)
-    {
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
-
-        request.add("tokenId", _tokenId);
-        request.add("unitId", _unitId);
-        request.add("to", _to);
-
-        // Multiply the result by 1000000000000000000 to remove decimals
-        int timesAmount = 10**18;
-        request.addInt("times", timesAmount);
-
-        // Sends the request
-        return sendChainlinkRequestTo(oracle, request, fee);
-    }
-    function fulfill(bytes32 _requestId, bool _valid, address _to, uint256 _tokenId, uint256 _unitId) public recordChainlinkFulfillment(_requestId)
-    {
-        if (_valid) {
-            _tokenUnitData[_tokenId][_unitId].owner = _to;
-        }
-    }
-
-
-    function getAllTokens() public view virtual returns (TokenData[] memory) {
-        TokenData[] memory tokens = new TokenData[](tokensCount);
-
-        for (uint256 i = 0 ; i < tokensCount ; i++) {
-            tokens[i] = _tokenData[i];
-        }
-
-        return tokens;
-    }
-
-    function tokenData(uint256 tokenId) public view virtual returns (TokenData memory) {
-        return _tokenData[tokenId];
-    }
-
-    function tokenUnitData(uint256 tokenId, uint256 tokenUnitId) public view virtual returns (TokenUnitData memory) {
-        return _tokenUnitData[tokenId][tokenUnitId];
     }
 
     function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
@@ -92,7 +27,29 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder, ChainlinkClient {
         return tokenId < tokensCount;
     }
 
-    function mintToken(string calldata tokenUri, string calldata tokenName, bytes memory data) external returns (uint256) {
+    function getAllTokens() public view virtual override returns (TokenData[] memory) {
+        TokenData[] memory tokens = new TokenData[](tokensCount);
+
+        for (uint256 i = 0 ; i < tokensCount ; i++) {
+            tokens[i] = _tokenData[i];
+        }
+
+        return tokens;
+    }
+
+    function getTokensCount() public view virtual override returns (uint256) {
+        return tokensCount;
+    }
+
+    function tokenData(uint256 tokenId) public view virtual override returns (TokenData memory) {
+        return _tokenData[tokenId];
+    }
+
+    function tokenUnitData(uint256 tokenId, uint256 tokenUnitId) public view virtual override returns (TokenUnitData memory) {
+        return _tokenUnitData[tokenId][tokenUnitId];
+    }
+
+    function mintToken(string calldata tokenUri, string calldata tokenName, bytes memory data) external virtual override returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
 
         _mint(address(this), tokensCount, 0, data);
@@ -102,7 +59,7 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder, ChainlinkClient {
         return tokensCount;
     }
 
-    function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256) {
+    function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external virtual override returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
         require(_exists(tokenId), "The token do not exists");
 
@@ -113,7 +70,27 @@ contract NFCool is ERC1155PresetMinterPauser, ERC1155Holder, ChainlinkClient {
         return _tokenUnitsCount[tokenId];
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155PresetMinterPauser, ERC1155Receiver) returns (bool) {
+    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) external virtual override returns (bytes32 requestId) {
+        require(_verificationContract != address(0), "You need to setup the verification contract address first");
+
+        return IPhoneVerification(_verificationContract).requestOwnership(_tokenId, _unitId, _to);
+    }
+
+    function giveOwnership(uint256 _tokenId, uint256 _unitId, address _to, bool _valid) external virtual override {
+        require(msg.sender == _verificationContract, "You don't have the permission to give ownership");
+        require(_valid, "Verification failed");
+
+        _tokenUnitData[_tokenId][_unitId].owner = _to;
+        _tokenUnitData[_tokenId][_unitId].status = "owned";
+        _safeTransferFrom(address(this), _to, _tokenId, 1, '');
+    }
+
+    function setVerificationContract(address _contract) external virtual override {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        _verificationContract = _contract;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Access, ERC1155Receiver) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
