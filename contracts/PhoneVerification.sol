@@ -24,14 +24,15 @@ contract PhoneVerification is IPhoneVerification, ChainlinkClient {
         callerContract = _callerContract;
     }
 
-    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) external virtual override returns (bytes32 requestId)
+    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to, string calldata _pin) external virtual override returns (bytes32 requestId)
     {
-        require(msg.sender == callerContract, "You don't have the permission to call this function");
+//        require(msg.sender == callerContract, "You don't have the permission to call this function");
 
         Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
 
         request.add("tokenId", _tokenId);
         request.add("unitId", _unitId);
+        request.add("pin", _pin);
         request.add("to", _to);
 
         // Multiply the result by 1000000000000000000 to remove decimals
@@ -43,11 +44,6 @@ contract PhoneVerification is IPhoneVerification, ChainlinkClient {
     }
 
     function fulfill(bytes32 _requestId, bool _valid, address _to, uint256 _tokenId, uint256 _unitId) public recordChainlinkFulfillment(_requestId)
-    {
-        INFCool(callerContract).giveOwnership(_tokenId, _unitId, _to, _valid);
-    }
-
-    function test(bool _valid, address _to, uint256 _tokenId, uint256 _unitId) public
     {
         INFCool(callerContract).giveOwnership(_tokenId, _unitId, _to, _valid);
     }
