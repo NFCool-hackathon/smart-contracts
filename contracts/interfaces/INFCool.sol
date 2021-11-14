@@ -24,7 +24,7 @@ interface INFCool {
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256);
 
-    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) external returns (bytes32 requestId);
+    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to, string calldata _pin) external returns (bytes32 requestId);
 
     function giveOwnership(uint256 _tokenId, uint256 _unitId, address _to, bool _valid) external;
 

@@ -70,10 +70,10 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return _tokenUnitsCount[tokenId];
     }
 
-    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to) external virtual override returns (bytes32 requestId) {
+    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to, string calldata _pin) external virtual override returns (bytes32 requestId) {
         require(_verificationContract != address(0), "You need to setup the verification contract address first");
 
-        return IPhoneVerification(_verificationContract).requestOwnership(_tokenId, _unitId, _to);
+        return IPhoneVerification(_verificationContract).requestOwnership(_tokenId, _unitId, _to, _pin);
     }
 
     function giveOwnership(uint256 _tokenId, uint256 _unitId, address _to, bool _valid) external virtual override {
