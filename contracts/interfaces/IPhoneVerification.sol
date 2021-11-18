@@ -1,5 +1,5 @@
 pragma solidity ^0.8.7;
 
 interface IPhoneVerification {
-    function requestOwnership(string calldata _tokenId, string calldata _unitId, string calldata _to, string calldata _pin) external returns (bytes32 requestId);
+    function requestOwnership(uint256 _tokenId, uint256 _unitId, address _to, string memory _pin) external returns (bytes32 requestId);
 }
