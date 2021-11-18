@@ -47,6 +47,7 @@ contract PhoneVerificationTest is IPhoneVerification, ChainlinkClient {
 
     function fulfillOwnership(bytes32 _requestId, bool _valid) public recordChainlinkFulfillment(_requestId)
     {
+        emit Fulfilled(_requestId, _valid);
         INFCool(callerContract).giveOwnership(uint256(_requests[_requestId].tokenId), uint256(_requests[_requestId].unitId), _requests[_requestId].to, _valid);
     }
 

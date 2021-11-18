@@ -55,8 +55,10 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _mint(address(this), tokensCount, 0, data);
         _tokenData[tokensCount] = TokenData(tokenUri, tokenName);
 
+        emit TokenMinted(tokensCount, tokenUri, tokenName, data);
+
         tokensCount++;
-        return tokensCount;
+        return tokensCount - 1;
     }
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external virtual override returns (uint256) {
@@ -66,28 +68,33 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _mint(address(this), _tokenUnitsCount[tokenId], 1, data);
         _tokenUnitData[tokenId][_tokenUnitsCount[tokenId]] = TokenUnitData(address(this), nfcId, "minted");
 
+        emit TokenUnitMinted(tokenId, _tokenUnitsCount[tokenId], nfcId, data);
+
         _tokenUnitsCount[tokenId]++;
-        return _tokenUnitsCount[tokenId];
+
+        return _tokenUnitsCount[tokenId] - 1;
     }
 
-    function requestOwnership(uint256 _tokenId, uint256 _unitId, address _to, string calldata _pin) external virtual override returns (bytes32 requestId) {
+    function requestOwnership(uint256 tokenId, uint256 unitId, address to, string calldata pin) external virtual override returns (bytes32 requestId) {
         require(_verificationContract != address(0), "You need to setup the verification contract address first");
 
-        return IPhoneVerification(_verificationContract).requestOwnership(_tokenId, _unitId, _to, _pin);
+        return IPhoneVerification(_verificationContract).requestOwnership(tokenId, unitId, to, pin);
     }
 
-    function giveOwnership(uint256 _tokenId, uint256 _unitId, address _to, bool _valid) external virtual override {
+    function giveOwnership(uint256 tokenId, uint256 unitId, address to, bool valid) external virtual override {
         require(msg.sender == _verificationContract, "You don't have the permission to give ownership");
-        require(_valid, "Verification failed");
 
-        _tokenUnitData[_tokenId][_unitId].owner = _to;
-        _tokenUnitData[_tokenId][_unitId].status = "owned";
-        _safeTransferFrom(address(this), _to, _tokenId, 1, '');
+        emit OwnershipGave(tokenId, unitId, to, valid);
+        require(valid == true, "Verification failed");
+
+        _tokenUnitData[tokenId][unitId].owner = to;
+        _tokenUnitData[tokenId][unitId].status = "owned";
+        _safeTransferFrom(address(this), to, tokenId, 1, '');
     }
 
-    function setVerificationContract(address _contract) external virtual override {
+    function setVerificationContract(address contractAdr) external virtual override {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
-        _verificationContract = _contract;
+        _verificationContract = contractAdr;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Access, ERC1155Receiver) returns (bool) {

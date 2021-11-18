@@ -12,6 +12,13 @@ pragma solidity ^0.8.7;
     }
 
 interface INFCool {
+
+    event OwnershipGave(uint256 indexed tokenId, uint256 unitId, address indexed to, bool valid);
+
+    event TokenMinted(uint256 tokenId, string tokenUri, string tokenName, bytes data);
+
+    event TokenUnitMinted(uint256 indexed tokenId, uint256 unitId, string nfcId, bytes data);
+
     function getAllTokens() external view returns (TokenData[] memory);
 
     function getTokensCount() external view returns (uint256);
@@ -24,9 +31,9 @@ interface INFCool {
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256);
 
-    function requestOwnership(uint256 _tokenId, uint256 _unitId, address _to, string calldata _pin) external returns (bytes32 requestId);
+    function requestOwnership(uint256 tokenId, uint256 unitId, address to, string calldata pin) external returns (bytes32 requestId);
 
-    function giveOwnership(uint256 _tokenId, uint256 _unitId, address _to, bool _valid) external;
+    function giveOwnership(uint256 tokenId, uint256 unitId, address to, bool valid) external;
 
-    function setVerificationContract(address _contract) external;
+    function setVerificationContract(address contractAdr) external;
 }
