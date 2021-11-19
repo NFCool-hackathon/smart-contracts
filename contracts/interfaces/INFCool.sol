@@ -13,7 +13,7 @@ pragma solidity ^0.8.7;
 
 interface INFCool {
 
-    event OwnershipGave(uint256 indexed tokenId, uint256 unitId, address indexed to, bool valid);
+    event OwnershipPermissionGave(uint256 indexed tokenId, uint256 unitId, address indexed to, bool valid);
 
     event TokenMinted(uint256 tokenId, string tokenUri, string tokenName, bytes data);
 
@@ -31,9 +31,19 @@ interface INFCool {
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external returns (uint256);
 
-    function requestOwnership(uint256 tokenId, uint256 unitId, address to, string calldata pin) external returns (bytes32 requestId);
+    function requestPhoneVerification(uint256 tokenId, uint256 unitId, address to, string calldata pin) external returns (bytes32 requestId);
 
-    function giveOwnership(uint256 tokenId, uint256 unitId, address to, bool valid) external;
+    function ownershipPermission(uint256 tokenId, uint256 unitId, address to, bool valid) external;
+
+    function claimOwnership(uint256 tokenId, uint256 unitId, address to) external;
 
     function setVerificationContract(address contractAdr) external;
+
+    function safeUnitTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 unitId,
+        bytes memory data
+    ) external;
 }

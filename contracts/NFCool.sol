@@ -14,6 +14,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     mapping (uint256 => uint256) private _tokenUnitsCount;
     mapping(uint256 => TokenData) private _tokenData;
     mapping(uint256 => mapping(uint256 => TokenUnitData)) private _tokenUnitData;
+    mapping(uint256 => mapping(uint256 => address)) private _claimPermissions;
 
     constructor(string memory _brandName) ERC1155Access("") {
         brandName = _brandName;
@@ -75,21 +76,53 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return _tokenUnitsCount[tokenId] - 1;
     }
 
-    function requestOwnership(uint256 tokenId, uint256 unitId, address to, string calldata pin) external virtual override returns (bytes32 requestId) {
+    function requestPhoneVerification(uint256 tokenId, uint256 unitId, address to, string calldata pin) external virtual override returns (bytes32 requestId) {
         require(_verificationContract != address(0), "You need to setup the verification contract address first");
+        require(_claimPermissions[tokenId][unitId] == address(0), "The permission is already gave");
+        require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
 
         return IPhoneVerification(_verificationContract).requestOwnership(tokenId, unitId, to, pin);
     }
 
-    function giveOwnership(uint256 tokenId, uint256 unitId, address to, bool valid) external virtual override {
+    function ownershipPermission(uint256 tokenId, uint256 unitId, address to, bool valid) external virtual override {
         require(msg.sender == _verificationContract, "You don't have the permission to give ownership");
 
-        emit OwnershipGave(tokenId, unitId, to, valid);
-        require(valid == true, "Verification failed");
+        _claimPermissions[tokenId][unitId] = to;
 
-        _tokenUnitData[tokenId][unitId].owner = to;
+        emit OwnershipPermissionGave(tokenId, unitId, to, valid);
+    }
+
+    function claimOwnership(uint256 tokenId, uint256 unitId, address to) external virtual override {
+        require(_claimPermissions[tokenId][unitId] == to, "The address don't have the permission");
+        require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
+
         _tokenUnitData[tokenId][unitId].status = "owned";
         _safeTransferFrom(address(this), to, tokenId, 1, '');
+    }
+
+    function safeUnitTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 unitId,
+        bytes memory data
+    ) public virtual override {
+        require(
+            from == _msgSender() || isApprovedForAll(from, _msgSender()),
+            "ERC1155: caller is not owner nor approved"
+        );
+        _safeUnitTransferFrom(from, to, tokenId, unitId, data);
+    }
+
+    function _safeUnitTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 unitId,
+        bytes memory data
+    ) internal virtual {
+        _tokenUnitData[tokenId][unitId].owner = to;
+        _safeTransferFrom(from, to, tokenId, 1, data);
     }
 
     function setVerificationContract(address contractAdr) external virtual override {
