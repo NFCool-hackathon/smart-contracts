@@ -66,7 +66,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
         require(_exists(tokenId), "The token do not exists");
 
-        _mint(address(this), _tokenUnitsCount[tokenId], 1, data);
+        _mint(address(this), tokenId, 1, data);
         _tokenUnitData[tokenId][_tokenUnitsCount[tokenId]] = TokenUnitData(address(this), nfcId, "minted");
 
         emit TokenUnitMinted(tokenId, _tokenUnitsCount[tokenId], nfcId, data);
