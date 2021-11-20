@@ -20,12 +20,8 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         brandName = _brandName;
     }
 
-    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
-        _tokenData[tokenId].uri = _tokenURI;
-    }
-
-    function _exists(uint256 tokenId) private view returns (bool) {
-        return tokenId < tokensCount;
+    function haveClaimPermission(uint256 tokenId, uint256 unitId, address account) public view returns (bool) {
+        return account == _claimPermissions[tokenId][unitId];
     }
 
     function getAllTokens() public view virtual override returns (TokenData[] memory) {
@@ -78,7 +74,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
 
     function requestPhoneVerification(uint256 tokenId, uint256 unitId, address to, string calldata pin) external virtual override returns (bytes32 requestId) {
         require(_verificationContract != address(0), "You need to setup the verification contract address first");
-        require(_claimPermissions[tokenId][unitId] == address(0), "The permission is already gave");
+        require(haveClaimPermission(tokenId, unitId, address(0)), "The permission is already gave");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
 
         return IPhoneVerification(_verificationContract).requestOwnership(tokenId, unitId, to, pin);
@@ -93,7 +89,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     }
 
     function claimOwnership(uint256 tokenId, uint256 unitId, address to) external virtual override {
-        require(_claimPermissions[tokenId][unitId] == to, "The address don't have the permission");
+        require(haveClaimPermission(tokenId, unitId, to), "The address don't have the permission");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
 
         _tokenUnitData[tokenId][unitId].status = "owned";
@@ -139,5 +135,13 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Access, ERC1155Receiver) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
+        _tokenData[tokenId].uri = _tokenURI;
+    }
+
+    function _exists(uint256 tokenId) private view returns (bool) {
+        return tokenId < tokensCount;
     }
 }
