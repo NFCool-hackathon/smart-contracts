@@ -32,7 +32,7 @@ contract PhoneVerificationTest is IPhoneVerification, ChainlinkClient {
 
     function requestOwnership(uint256 _tokenId, uint256 _unitId, address _to, string memory _pin) external virtual override returns (bytes32 requestId)
     {
-        //        require(msg.sender == callerContract, "You don't have the permission to call this function");
+        require(msg.sender == callerContract, "You don't have the permission to call this function");
 
         Chainlink.Request memory request = buildChainlinkRequest(stringToBytes32(jobId), address(this), this.fulfillOwnership.selector);
 

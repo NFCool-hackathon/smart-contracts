@@ -97,7 +97,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
 
         _tokenUnitData[tokenId][unitId].status = "owned";
-        _safeTransferFrom(address(this), to, tokenId, 1, '');
+        _safeUnitTransferFrom(address(this), to, tokenId, unitId, '');
     }
 
     function safeUnitTransferFrom(
@@ -128,6 +128,13 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     function setVerificationContract(address contractAdr) external virtual override {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
         _verificationContract = contractAdr;
+    }
+
+    function unitSold(uint256 tokenId, uint256 unitId) external {
+        require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(_exists(tokenId), "The token do not exists");
+
+        _tokenUnitData[tokenId][unitId].status = "sold";
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Access, ERC1155Receiver) returns (bool) {
