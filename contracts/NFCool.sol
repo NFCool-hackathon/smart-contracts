@@ -24,16 +24,6 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return account == _claimPermissions[tokenId][unitId];
     }
 
-    function getAllTokens() public view virtual override returns (TokenData[] memory) {
-        TokenData[] memory tokens = new TokenData[](tokensCount);
-
-        for (uint256 i = 0 ; i < tokensCount ; i++) {
-            tokens[i] = _tokenData[i];
-        }
-
-        return tokens;
-    }
-
     function allBalancesOf(address account) public view returns (uint256[] memory){
         uint[] memory amounts = new uint[](tokensCount);
 

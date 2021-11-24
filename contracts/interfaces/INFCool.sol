@@ -19,8 +19,6 @@ interface INFCool {
 
     event TokenUnitMinted(uint256 indexed tokenId, uint256 unitId, string nfcId, bytes data);
 
-    function getAllTokens() external view returns (TokenData[] memory);
-
     function getTokensCount() external view returns (uint256);
 
     function tokenData(uint256 tokenId) external view returns (TokenData memory);
