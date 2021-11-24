@@ -20,6 +20,10 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         brandName = _brandName;
     }
 
+    function getBrandName() external view returns (string memory) {
+        return brandName;
+    }
+
     function haveClaimPermission(uint256 tokenId, uint256 unitId, address account) public view returns (bool) {
         return account == _claimPermissions[tokenId][unitId];
     }
