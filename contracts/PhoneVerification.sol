@@ -6,7 +6,7 @@ import "./interfaces/IPhoneVerification.sol";
 
 import "./interfaces/INFCool.sol";
 
-contract PhoneVerificationTest is IPhoneVerification, ChainlinkClient {
+contract PhoneVerification is IPhoneVerification, ChainlinkClient {
     using Chainlink for Chainlink.Request;
 
     struct Request {

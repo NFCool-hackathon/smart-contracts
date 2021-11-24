@@ -127,9 +127,16 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
 
     function unitSold(uint256 tokenId, uint256 unitId) external {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
-        require(_exists(tokenId), "The token do not exists");
+        require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked('minted')), "The status of this token can't be set as 'sold'");
 
         _tokenUnitData[tokenId][unitId].status = "sold";
+    }
+
+    function unitStolen(uint256 tokenId, uint256 unitId) external {
+        require(_isOwner(tokenId, unitId, msg.sender), "You don't have the permission to edit the status of this token");
+        require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked('owned')), "The status of this token can't be set as 'stolen'");
+
+        _tokenUnitData[tokenId][unitId].status = "stolen";
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Access, ERC1155Receiver) returns (bool) {
@@ -142,5 +149,9 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
 
     function _exists(uint256 tokenId) private view returns (bool) {
         return tokenId < tokensCount;
+    }
+
+    function _isOwner(uint256 tokenId, uint256 unitId, address account) private view returns (bool) {
+        return _tokenUnitData[tokenId][unitId].owner == account;
     }
 }
