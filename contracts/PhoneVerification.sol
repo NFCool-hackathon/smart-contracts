@@ -1,12 +1,13 @@
 pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IPhoneVerification.sol";
 
 import "./interfaces/INFCool.sol";
 
-contract PhoneVerification is IPhoneVerification, ChainlinkClient {
+contract PhoneVerification is IPhoneVerification, ChainlinkClient, Ownable {
     using Chainlink for Chainlink.Request;
 
     struct Request {
@@ -23,10 +24,13 @@ contract PhoneVerification is IPhoneVerification, ChainlinkClient {
     address private callerContract;
     mapping (bytes32 => Request) private _requests;
 
-    constructor(address _callerContract) {
+    constructor() {
         setPublicChainlinkToken();
         oracle = 0xACADFbd7e4Ec5B29D18bcBc70cdA57Ef271cE931;
         jobId = "7b75d14b3c714fd19cbb199a36aaa9c9";
+    }
+
+    function setCallerContract(address _callerContract) external onlyOwner() {
         callerContract = _callerContract;
     }
 

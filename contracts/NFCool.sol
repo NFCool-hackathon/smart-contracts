@@ -16,8 +16,9 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     mapping(uint256 => mapping(uint256 => TokenUnitData)) private _tokenUnitData;
     mapping(uint256 => mapping(uint256 => address)) private _claimPermissions;
 
-    constructor(string memory _brandName) ERC1155Access("") {
+    constructor(string memory _brandName, address verificationContract) ERC1155Access("") {
         brandName = _brandName;
+        _verificationContract = verificationContract;
     }
 
     function getBrandName() external view returns (string memory) {
@@ -62,7 +63,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
     }
 
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external virtual override returns (uint256) {
-        require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(hasRole(SUPPLIER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
         require(_exists(tokenId), "The token do not exists");
 
         _mint(address(this), tokenId, 1, data);
@@ -124,13 +125,8 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _safeTransferFrom(from, to, tokenId, 1, data);
     }
 
-    function setVerificationContract(address contractAdr) external virtual override {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
-        _verificationContract = contractAdr;
-    }
-
     function unitSold(uint256 tokenId, uint256 unitId) external {
-        require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(hasRole(SELLER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked('minted')), "The status of this token can't be set as 'sold'");
 
         _tokenUnitData[tokenId][unitId].status = "sold";

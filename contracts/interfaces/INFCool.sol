@@ -35,8 +35,6 @@ interface INFCool {
 
     function claimOwnership(uint256 tokenId, uint256 unitId, address to) external;
 
-    function setVerificationContract(address contractAdr) external;
-
     function safeUnitTransferFrom(
         address from,
         address to,

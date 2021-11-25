@@ -20,6 +20,8 @@ import "@openzeppelin/contracts/utils/Context.sol";
  */
 contract ERC1155Access is Context, AccessControlEnumerable, ERC1155 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant SUPPLIER_ROLE = keccak256("SUPPLIER_ROLE");
+    bytes32 public constant SELLER_ROLE = keccak256("SELLER_ROLE");
 
     /**
      * @dev Grants `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, and `PAUSER_ROLE` to the account that
@@ -29,6 +31,8 @@ contract ERC1155Access is Context, AccessControlEnumerable, ERC1155 {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
         _setupRole(MINTER_ROLE, _msgSender());
+        _setupRole(SELLER_ROLE, _msgSender());
+        _setupRole(SUPPLIER_ROLE, _msgSender());
     }
 
     function supportsInterface(bytes4 interfaceId)
