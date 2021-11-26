@@ -21,6 +21,7 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _verificationContract = verificationContract;
     }
 
+
     function getBrandName() external view returns (string memory) {
         return brandName;
     }
@@ -50,6 +51,17 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return _tokenUnitData[tokenId][tokenUnitId];
     }
 
+    /**
+    * @dev Mints a new token (amount = 0)
+     *
+     * Emits a {TokenMinted} event.
+     *
+     * Requirements:
+     *
+     * - msg.sender must have a minter role
+     * - `tokenURI` must be an image URI
+     * - `nfcId` should be the ID of the nfc tag associated to the unit
+     */
     function mintToken(string calldata tokenUri, string calldata tokenName, bytes memory data) external virtual override returns (uint256) {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
 
@@ -62,8 +74,19 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return tokensCount - 1;
     }
 
+    /**
+    * @dev Mints a new unit (amount = 1) of the token `tokenId`
+     *
+     * Emits a {TokenUnitMinted} event.
+     *
+     * Requirements:
+     *
+     * - `tokenId` should be an existing token.
+     * - msg.sender must have a supplier role
+     * - `nfcId` should be the ID of the nfc tag associated to the unit
+     */
     function mintTokenUnit(uint256 tokenId, string calldata nfcId, bytes memory data) external virtual override returns (uint256) {
-        require(hasRole(SUPPLIER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(hasRole(SUPPLIER_ROLE, _msgSender()), "ERC1155Account: must have supplier role to mint");
         require(_exists(tokenId), "The token do not exists");
 
         _mint(address(this), tokenId, 1, data);
@@ -76,6 +99,17 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return _tokenUnitsCount[tokenId] - 1;
     }
 
+    /**
+     * @dev Calls the phone verification smart contract to verify the `pin`
+     *
+     *
+     * Requirements:
+     *
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     */
     function requestPhoneVerification(uint256 tokenId, uint256 unitId, address to, string calldata pin) external virtual override returns (bytes32 requestId) {
         require(_verificationContract != address(0), "You need to setup the verification contract address first");
         require(haveClaimPermission(tokenId, unitId, address(0)), "The permission is already gave");
@@ -84,6 +118,19 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         return IPhoneVerification(_verificationContract).requestOwnership(tokenId, unitId, to, pin);
     }
 
+    /**
+     * @dev Gives permission to 'to' to claim the token 'tokenId' 'unitId'
+     *
+     * Emits a {OwnershipPermissionGave} event.
+     *
+     * Requirements:
+     *
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * - `valid` must be true
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     */
     function ownershipPermission(uint256 tokenId, uint256 unitId, address to, bool valid) external virtual override {
         require(msg.sender == _verificationContract, "You don't have the permission to give ownership");
 
@@ -92,6 +139,17 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         emit OwnershipPermissionGave(tokenId, unitId, to, valid);
     }
 
+    /**
+     * @dev Claims ownership of the token with tokenId and unitId,
+     *
+     * Emits a {TransferSingle} event.
+     *
+     * Requirements:
+     *
+     * - `to` must have have permission to claim
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     */
     function claimOwnership(uint256 tokenId, uint256 unitId, address to) external virtual override {
         require(haveClaimPermission(tokenId, unitId, to), "The address don't have the permission");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked("sold")), "This token can't be claimed");
@@ -100,6 +158,22 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _safeUnitTransferFrom(address(this), to, tokenId, unitId, '');
     }
 
+    /**
+     * @dev Transfers one unit of type `tokenId` and `unitId` from `from` to `to`.
+     *
+     * Emits a {TransferSingle} event.
+     *
+     * Requirements:
+     *
+     * - msg.sender should be the owner of the token or have approval
+     * - `to` cannot be the zero address.
+     * - `from` must have a balance of tokens of type `id` of at least `amount`.
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * msg.sender should have seller role
+     */
     function safeUnitTransferFrom(
         address from,
         address to,
@@ -114,6 +188,21 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _safeUnitTransferFrom(from, to, tokenId, unitId, data);
     }
 
+    /**
+     * @dev Transfers one unit of type `tokenId` and `unitId` from `from` to `to`.
+     *
+     * Emits a {TransferSingle} event.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `from` must have a balance of tokens of type `id` of at least `amount`.
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * msg.sender should have seller role
+     */
     function _safeUnitTransferFrom(
         address from,
         address to,
@@ -125,13 +214,33 @@ contract NFCool is INFCool, ERC1155Access, ERC1155Holder {
         _safeTransferFrom(from, to, tokenId, 1, data);
     }
 
+    /**
+     * @dev Sets the status of the tokenId, unitId to 'sold'
+     *
+     *
+     * Requirements:
+     *
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * msg.sender should have seller role
+     */
     function unitSold(uint256 tokenId, uint256 unitId) external {
-        require(hasRole(SELLER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
+        require(hasRole(SELLER_ROLE, _msgSender()), "NFCool: must have seller role to sell a unit");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked('minted')), "The status of this token can't be set as 'sold'");
 
         _tokenUnitData[tokenId][unitId].status = "sold";
     }
 
+    /**
+     * @dev Sets the status of the tokenId, unitId to 'stolen'
+     *
+     *
+     * Requirements:
+     *
+     * - `tokenId` should be an existing token.
+     * - `unitId` should be an existing unit of the tokenId
+     * msg.sender should be the owner of the unit
+     */
     function unitStolen(uint256 tokenId, uint256 unitId) external {
         require(_isOwner(tokenId, unitId, msg.sender), "You don't have the permission to edit the status of this token");
         require(keccak256(abi.encodePacked(_tokenUnitData[tokenId][unitId].status)) == keccak256(abi.encodePacked('owned')), "The status of this token can't be set as 'stolen'");
