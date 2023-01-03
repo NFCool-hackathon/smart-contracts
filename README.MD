@@ -1,5 +1,7 @@
 # NFCool Smart Contracts
 
+Smart contract repository for the Chainlink hackathon submission NFCool: https://devpost.com/software/nfc-for-real-goods 
+
 ## About / Synopsis
 
 Smart Contracts designed to link real-world items to blockchain, providing two main solutions:
